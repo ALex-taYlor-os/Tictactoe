@@ -1,53 +1,128 @@
 import os
 import random
 import re
-import time
-
-#grille de morpion sous forme de liste linéaire en variable globale 1
-tabTictactoe = ['V','V','V','V','V','V','V','V','V']
-
-
 
 
 
 # Jouer contre l'ordinateur
-def ordinateur(board, signe): 
-    positionAlea=random.randint(0, 8)
-    if board[positionAlea]=="V":        #on vérifiuesi la case est libre
-        return positionAlea
-    elif board[positionAlea]==signe:    #on vérifie si la case contient déjà le signe auquel cas , on rappelle la fonction pour choisir une autre case
-        return ordinateur(board,signe)
-    elif board.count("V")>1:            #on demande si il existe encore des cases vides pour jouer auquel cas, on rappelle encore la fonction
-        return ordinateur(board,signe)
-    else:                               # si il n'existe plus de case
+def ordinateur(board, AIsign): 
+     
+    if AIsign=='X':
+        humanSign="O"
+    else:
+        humanSign="X"
+
+    positionHumanSign = calculatedPosition(board,humanSign)
+
+    if board.count(humanSign)==0 or (positionHumanSign is not None and board.count(humanSign)==1 and positionHumanSign!=4 ): 
+        return 4
+    
+    elif board.count(humanSign)==1 and positionHumanSign==4 : 
+        listForAItoPlay=[0,2,6,8]        
+        return random.choice(listForAItoPlay)
+    
+    else:
+        return blockingAI(board,AIsign,humanSign)               
+
+
+
+#IA qui va essayer de bloquer les attaques du joueur mais aussi attaquer si elle le peut.
+#Renvoie une position à jouer pour l'ordinateur
+def blockingAI(board,AIsign,humanSign):
+    combinaisonVictory=[(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(6,4,2)]
+    
+
+    for i in range(len(board)):
+        if board[i]==humanSign:
+            for u in range(len(board)):
+                if u!=i and board[u]==humanSign:
+                    tuplewinning=(i,u)
+                    for lineCompared in combinaisonVictory:
+                        if isSubTuple(tuplewinning,lineCompared):
+                            number=indexNotInTuple(lineCompared,tuplewinning)
+                            if number is not None and board[number]=="V":
+                                return number
+
+
+    for i in range(len(board)):
+        if board[i]==AIsign:
+            for u in range(len(board)):
+                if u!=i and board[u]==AIsign:
+                    tuplewinning=(i,u)
+                    for lineCompared in combinaisonVictory:
+                        if isSubTuple(tuplewinning,lineCompared):
+                            number=indexNotInTuple(lineCompared,tuplewinning)
+                            if number is not None and board[number]=="V":
+                                return number 
+    
+    listForChoicePosition=[]
+    for i in range(len(board)):
+        if board[i]=="V":
+            listForChoicePosition.append(i)
+              
+            
+    return random.choice(listForChoicePosition)
+
+
+
+#Fonction qui renvoie le chiffre qui n'est pas dans le triplet gagnant
+def indexNotInTuple(combinaisonVictory,tuplewinning):
+    for i in combinaisonVictory:
+        if i not in tuplewinning:
+            return i
+       
+#Fonction verifiant si un tuple fait parti d'un plus grand tuple.
+def isSubTuple(subSequence,fullSequence):
+    count=0
+    for value in subSequence:
+        if value in fullSequence:
+            count+=1
+    if count >=2:
+        return True
+    else:         
         return False
 
 
-#Fonction pour mettre un signe par un utilisateur humain
-def putSign(signTest):
+#Retourne l'indice auquel se trouve le signExample
+def  calculatedPosition(board,signExample):
+    for i in range(len(board)):
+        if board[i]==signExample:
+            return i
+        else:
+           pass
+    return None
+
+#Fonction qui ajoute un signe dans la grille. Renvoie le tableau mis à jour.
+def putSign(board,signTest):
+    
     indexUser=input("Veuillez rentrer un numéro compris entre 1 et 9:"+"\n")
 
     
     if re.fullmatch(r"[1-9]",indexUser):
         indexUserInt=int(indexUser)
-        if tabTictactoe[indexUserInt-1]=="V": #Si la case est vide mettre le signe
-            tabTictactoe[indexUserInt-1]=signTest
-            return 
+       
+        if 1 <= indexUserInt <= 3:
+            indexUserInt+=6           
+        elif 7 <= indexUserInt <= 9:  
+            indexUserInt-=6   
+        else:
+            pass
+       
+        indexUserInt-=1
+        if board[indexUserInt]=="V": #Si la case est vide mettre le signe
+               board[indexUserInt]=signTest
+               return board
         else:                           # Sinon redemandait une autre valeur de case
-             
-            putSign(signTest)
+               
+              return putSign(board,signTest)     
     else:
-              
-        putSign(signTest)
+        
+        return putSign(board,signTest)
          
 
-
-
-
-
-#Fonction affichant le morpion
-def screenBoard(board): #trouver un moyen pour que saffiche toutjours en haut
-      clear_console()
+#Fonction affichant la grille du tictactoe
+def screenBoard(board): 
+      os.system("cls" )
       u=0      
       for i in range(0,3):
         print(i+1,end="")
@@ -56,17 +131,13 @@ def screenBoard(board): #trouver un moyen pour que saffiche toutjours en haut
             print(board[u],"|",end="")
             u+=1          
         print("") 
+   
 
-    
-#fonction pour supprimer tout ce qui a été marqué dans le terminal
-def clear_console():
-    os.system("cls" )
-
-#fonction qui vérifie si il y a un gagnant selon le signe par un True et False= aucun gagnant
-def checkVictory(board,sign,player="player1"):
+#Fonction qui vérifie si il y a un gagnant. Renvoie True = Il existe, False= Il existe pas.
+def checkVictory(board,sign,player):
    
     tupleContext=(sign,player)
-    if board.count(sign)<3: #Si moins de trois fois le même signe, pas de possibilité de gagne
+    if board.count(sign)<3: 
         return False
     elif board[0]==sign and board[3]==sign and board[6]==sign or\
         board[1]==sign and board[4]==sign and board[7]==sign \
@@ -75,16 +146,16 @@ def checkVictory(board,sign,player="player1"):
         or board[0]==sign and board[1]==sign and board[2]==sign \
         or board[3]==sign and board[4]==sign and board[5]==sign \
         or board[6]==sign and board[7]==sign and board[8]==sign \
-        or board[2]==sign and board[5]==sign and board[7]==sign:
+        or board[2]==sign and board[5]==sign and board[8]==sign:
             screenBoard(board)
-            for i in range(len(tabTictactoe)):
-                tabTictactoe[i]='V'
+            for i in range(len(board)):
+                board[i]='V'
 
             match tupleContext:
-                case ("X","humainOrdi"):
+                case ("X","alone"):
                     print("Vous avez gagné !")
                     return True
-                case ("X","player1"):
+                case ("X","withHuman"):
                     print("Le joueur 1 a gagné")
                     return True
                 case ("O","Computer"):
@@ -100,85 +171,77 @@ def checkVictory(board,sign,player="player1"):
         return True
     else:
         return False
-               # Toutes les combinaisons pour gagner, A revoir pour le programmer en fonction selon taille de la grille
-           
-    
-
-def screenWin(MessageVictory): #REVOIR LES FONCTIONS QUI DOIVENT FAIRE UNE SEULE
-    screenBoard(tabTictactoe)
-    print(MessageVictory)
-    print("")
 
 
-#intialisation pour une partie contre l'ordinateur
+#Fonction pour commencer une partie. Elle renvoie les signes pour chaque joeur et le mode de jeu
 def playgame(sign,sign2):
    
-    userChoiceVersus=input("Voulez-vous jouer contre l'ordinateur (1) ou avec un deuxième joueur (2) ? ")
-
+    userChoiceVersus=input("Voulez-vous jouer contre l'ordinateur (1) ou avec un deuxième joueur (2) ? \n ")
     if re.fullmatch(r"[1-2]",userChoiceVersus):
         userChoiceVersus=int(userChoiceVersus)
+        
         if userChoiceVersus==1:
             sign="X"
             sign2="O"
-            player2="Computer"
-        else:                   #A voir pour rajouter l'option du choix quand tu es le joueur 1 et le joueur 2.
+            playerAIorHuman="Computer"
+        else:                   
             sign = "X"
             sign2 = "O"            
-            player2="joueur2"
-            input(f"Le joueur 1 a les {sign} et le joueur 2 a les {sign2}. Apuuyez sur Entrée pour commencer")
+            playerAIorHuman="joueur2"
+            input(f"Le joueur 1 a les {sign} et le joueur 2 a les {sign2}. \nAppuyez sur Entrée pour commencer")
             
     else:
-        print("Veuillez rentrer un nombre valide")
-        playgame(sign,sign2)
-        return
+        print("Veuillez rentrer un nombre valide.")
+        return playgame(sign,sign2)
+        
 
-    return sign,sign2,player2,userChoiceVersus # retourner  plus de signes
+    return sign,sign2,playerAIorHuman,userChoiceVersus 
 
 
-def mainGame():
+#Fonction principale qui lance le jeu
+
+def main():
+    print("\n-------------------Bienvenue au jeu du morpion-------------------\n")
+    tabTictactoe=["V","V","V","V","V","V","V","V","V"]
     play=True
     sign=""
     signAIorPlayer2=""
     sign,signAIorPlayer2,secondPlayer,modePlay=playgame(sign,signAIorPlayer2)
+    mainPlayer="withHuman"
 
-    firstPlayer="player1"
-
-
-
-    #boucle infini pour afficher en continu la grille du morpion
     while play==True:
         
         screenBoard(tabTictactoe)       
-        print("C'est au tour du Joueur 1 de jouer.")
-        putSign(sign)#fonction pour que l'utilisateur mette un signe dans la grille 
-        if checkVictory(tabTictactoe,sign,firstPlayer):
+        print("C'est au tour du Joueur 1 de jouer.\n")
+        tabTictactoe=putSign(tabTictactoe,sign)
+        if checkVictory(tabTictactoe,sign,mainPlayer):
             break
         else:        
             match modePlay:
                 case 1:
-                    tabTictactoe[ordinateur(tabTictactoe,signAIorPlayer2)]="O" 
-                    firstPlayer="humainOrdi"
+                    indexAI=ordinateur(tabTictactoe,signAIorPlayer2)
+                    tabTictactoe[indexAI]="O" 
+                    mainPlayer="alone"
                 case 2:
                     screenBoard(tabTictactoe)
                     print("C'est au tour du Joueur 2 de jouer.")
-                    putSign(signAIorPlayer2)
+                    tabTictactoe=putSign(tabTictactoe,signAIorPlayer2)
 
-            if checkVictory(tabTictactoe,signAIorPlayer2,secondPlayer):
-                    
+            if checkVictory(tabTictactoe,signAIorPlayer2,secondPlayer):                    
                 break
 
-            else:
-                pass
-    choice=input("Voulez-vous recommencer une partie ? 1 = Oui et 2 = Non"+"\n")
+          
+    choice=input("Voulez-vous recommencer une partie ? (1) = Oui, (2) = Non"+"\n")
     if re.fullmatch(r"[1-2]",choice):
         if int(choice) == 1:            
-            mainGame()
+            main()
         else:
+            print("A bientôt !")
             exit 
-    else:
-        exit
+    
+#Lancement du jeu par l'appel de la fonction mainGame
 
-mainGame()
+main()
  
 
     
