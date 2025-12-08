@@ -31,7 +31,8 @@ def ordinateur(board, AIsign):
 def blockingAI(board,AIsign,humanSign):
     combinaisonVictory=[(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(6,4,2)]
     
-
+    
+    #Bloquer le joueur
     for i in range(len(board)):
         if board[i]==humanSign:
             for u in range(len(board)):
@@ -43,7 +44,7 @@ def blockingAI(board,AIsign,humanSign):
                             if number is not None and board[number]=="V":
                                 return number
 
-
+    #Attaquer
     for i in range(len(board)):
         if board[i]==AIsign:
             for u in range(len(board)):
@@ -55,11 +56,11 @@ def blockingAI(board,AIsign,humanSign):
                             if number is not None and board[number]=="V":
                                 return number 
     
+    #Jouer aléatoirement
     listForChoicePosition=[]
     for i in range(len(board)):
         if board[i]=="V":
-            listForChoicePosition.append(i)
-              
+            listForChoicePosition.append(i)              
             
     return random.choice(listForChoicePosition)
 
@@ -96,9 +97,9 @@ def  calculatedPosition(board,signExample):
 def putSign(board,signTest):
     
     indexUser=input("Veuillez rentrer un numéro compris entre 1 et 9:"+"\n")
-
     
     if re.fullmatch(r"[1-9]",indexUser):
+        
         indexUserInt=int(indexUser)
        
         if 1 <= indexUserInt <= 3:
@@ -109,10 +110,10 @@ def putSign(board,signTest):
             pass
        
         indexUserInt-=1
-        if board[indexUserInt]=="V": #Si la case est vide mettre le signe
+        if board[indexUserInt]=="V": 
                board[indexUserInt]=signTest
                return board
-        else:                           # Sinon redemandait une autre valeur de case
+        else:                           
                
               return putSign(board,signTest)     
     else:
@@ -176,13 +177,14 @@ def checkVictory(board,sign,player):
 #Fonction pour commencer une partie. Elle renvoie les signes pour chaque joeur et le mode de jeu
 def playgame(sign,sign2):
    
-    userChoiceVersus=input("Voulez-vous jouer contre l'ordinateur (1) ou avec un deuxième joueur (2) ? \n ")
+    userChoiceVersus=input("Il est préférable de jouer avec le pavé numérique pour plus de confort.\nVoulez-vous jouer contre l'ordinateur (1) ou avec un deuxième joueur (2) ? \n ")
     if re.fullmatch(r"[1-2]",userChoiceVersus):
         userChoiceVersus=int(userChoiceVersus)
         
         if userChoiceVersus==1:
             sign="X"
             sign2="O"
+            order=input("Choisissez qui commence : (1) Le joueur (2) L'IA.\n")
             playerAIorHuman="Computer"
         else:                   
             sign = "X"
@@ -194,8 +196,9 @@ def playgame(sign,sign2):
         print("Veuillez rentrer un nombre valide.")
         return playgame(sign,sign2)
         
+    
 
-    return sign,sign2,playerAIorHuman,userChoiceVersus 
+    return sign,sign2,playerAIorHuman,userChoiceVersus,order
 
 
 #Fonction principale qui lance le jeu
@@ -206,41 +209,57 @@ def main():
     play=True
     sign=""
     signAIorPlayer2=""
-    sign,signAIorPlayer2,secondPlayer,modePlay=playgame(sign,signAIorPlayer2)
+    orderPlay=0
+    sign,signAIorPlayer2,secondPlayer,modePlay,orderPlay=playgame(sign,signAIorPlayer2)
     mainPlayer="withHuman"
 
     while play==True:
         
-        screenBoard(tabTictactoe)       
-        print("C'est au tour du Joueur 1 de jouer.\n")
-        tabTictactoe=putSign(tabTictactoe,sign)
-        if checkVictory(tabTictactoe,sign,mainPlayer):
-            break
-        else:        
-            match modePlay:
-                case 1:
-                    indexAI=ordinateur(tabTictactoe,signAIorPlayer2)
-                    tabTictactoe[indexAI]="O" 
-                    mainPlayer="alone"
-                case 2:
-                    screenBoard(tabTictactoe)
-                    print("C'est au tour du Joueur 2 de jouer.")
-                    tabTictactoe=putSign(tabTictactoe,signAIorPlayer2)
+             
+        match modePlay:
+            case 1:
+                
+                if re.fullmatch(r"[1-2]",orderPlay):
+                    if int(orderPlay) == 1:     
+                        screenBoard(tabTictactoe)                                                  
+                        tabTictactoe=putSign(tabTictactoe,sign)
+                        screenBoard(tabTictactoe)  
+                        orderPlay="2"
+                        if checkVictory(tabTictactoe,sign,mainPlayer):
+                            break
 
-            if checkVictory(tabTictactoe,signAIorPlayer2,secondPlayer):                    
-                break
+                    else:
+                        indexAI=ordinateur(tabTictactoe,signAIorPlayer2)
+                        tabTictactoe[indexAI]="O"                 
+                        screenBoard(tabTictactoe)         
+                        mainPlayer="alone"
+                        orderPlay="1"
+             
+            case 2:
+                print("C'est au tour du Joueur 1 de jouer.\n")
+                screenBoard(tabTictactoe)  
+                tabTictactoe=putSign(tabTictactoe,sign)
+                if checkVictory(tabTictactoe,sign,mainPlayer):
+                    break
+
+                screenBoard(tabTictactoe)
+                print("C'est au tour du Joueur 2 de jouer.")
+                tabTictactoe=putSign(tabTictactoe,signAIorPlayer2)
+
+        if checkVictory(tabTictactoe,signAIorPlayer2,secondPlayer):                    
+            break
 
           
-    choice=input("Voulez-vous recommencer une partie ? (1) = Oui, (2) = Non"+"\n")
-    if re.fullmatch(r"[1-2]",choice):
+    choice=input("Voulez-vous recommencer une partie ? (1) = Oui, Entrée = Non\n")
+    if re.fullmatch(r"[1]",choice):
         if int(choice) == 1:            
             main()
-        else:
-            print("A bientôt !")
-            exit 
     
-#Lancement du jeu par l'appel de la fonction mainGame
+    print("A bientôt !")
+    exit 
+    
 
+#Lancement du jeu par l'appel de la fonction mainGame
 main()
  
 
