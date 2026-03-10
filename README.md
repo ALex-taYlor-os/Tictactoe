@@ -1,2 +1,2 @@
-# Tictactoe
+# Jeu sous python
 Projet Morpion
